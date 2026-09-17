@@ -1,0 +1,11 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+# pydantic dinaikkan dari 2.9.2 -> 2.12.5 karena google-genai mensyaratkan
+# pydantic>=2.12.5; tetap kompatibel dengan fastapi==0.115.0 dan seluruh
+# skema Pydantic v2 (field_validator dkk.) di schemas.py.
+pydantic==2.12.5
+requests==2.32.3
+python-dotenv==1.0.1
+google-genai==2.23.0
+# httpx ikut terpasang otomatis sebagai dependency google-genai (dipakai
+# langsung di gemini_client.py untuk deteksi error jaringan)

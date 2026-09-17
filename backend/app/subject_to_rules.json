@@ -1,0 +1,233 @@
+{
+  "_note": "Konfigurasi rule dummy untuk Subject To / Conditions. Setiap rule dievaluasi terhadap data hasil ekstraksi (field_definitions), riwayat klaim (claim_history), dan data case. Teks 'text_template' adalah teks tetap dari konfigurasi (bukan buatan LLM). 'kb_query' dipakai untuk mencari rujukan Knowledge Base yang relevan sebagai sumber; jika tidak ditemukan rujukan yang cukup relevan, sistem akan menandai kondisi tersebut sebagai 'tanpa rujukan KB' apa adanya - tidak pernah mengarang sumber.",
+  "rules": [
+    {
+      "id": "RTC_DISCOUNT_01",
+      "category": "Batasan RTC/Discount",
+      "always_apply": false,
+      "when": {
+        "field": "building.construction_type",
+        "condition": "value_in",
+        "values": ["beton", "beton bertulang", "baja", "concrete", "steel", "class 1"]
+      },
+      "text_template": "RTC/discount rate dapat dipertimbangkan maksimal 15% dari rate dasar, dengan syarat konstruksi bangunan Kelas 1 (beton/baja) dan sistem proteksi kebakaran berfungsi baik sesuai hasil survey.",
+      "kb_query": "risk appetite ketentuan RTC discount rate properti konstruksi kelas 1"
+    },
+    {
+      "id": "RTC_DISCOUNT_02",
+      "category": "Batasan RTC/Discount",
+      "always_apply": false,
+      "when": {
+        "field": "building.construction_type",
+        "condition": "value_in",
+        "values": ["kayu", "semi permanen", "wood", "campuran"]
+      },
+      "text_template": "RTC/discount rate dibatasi maksimal 5% dari rate dasar mengingat konstruksi bangunan non Kelas 1 (kayu/semi permanen/campuran); tidak direkomendasikan diskon tambahan tanpa persetujuan senior underwriter.",
+      "kb_query": "risk appetite pembatasan discount konstruksi non kelas 1"
+    },
+    {
+      "id": "FIRE_PROTECTION_01",
+      "category": "Kelayakan & Kondisi Fire Protection",
+      "always_apply": false,
+      "when": {
+        "field": "fire_protection.sprinkler",
+        "condition": "value_in",
+        "values": ["tidak", "tidak ada", "no", "none", "not found"]
+      },
+      "text_template": "Sistem sprinkler belum tersedia/tidak terkonfirmasi. Akseptasi bersyarat: Tertanggung wajib memasang/mengaktifkan sistem sprinkler yang berfungsi baik sesuai standar NFPA/SNI proteksi kebakaran dalam periode yang disepakati, atau rate & TSI disesuaikan dengan risk grading tanpa sprinkler.",
+      "kb_query": "pedoman underwriting kelayakan fire protection sprinkler wajib"
+    },
+    {
+      "id": "FIRE_PROTECTION_02",
+      "category": "Kelayakan & Kondisi Fire Protection",
+      "always_apply": false,
+      "when": {
+        "field": "fire_protection.hydrant",
+        "condition": "value_in",
+        "values": ["tidak", "tidak ada", "no", "none", "not found"]
+      },
+      "text_template": "Hydrant belum terkonfirmasi tersedia di lokasi risiko. Disarankan penambahan hydrant internal/eksternal serta APAR yang memadai sebagai syarat akseptasi lanjutan.",
+      "kb_query": "SOP kelengkapan hydrant apar proteksi kebakaran lokasi risiko"
+    },
+    {
+      "id": "FIRE_PROTECTION_03",
+      "category": "Kelayakan & Kondisi Fire Protection",
+      "always_apply": false,
+      "when": {
+        "field": "fire_protection.sprinkler",
+        "condition": "value_in",
+        "values": ["ada", "yes", "ya"]
+      },
+      "text_template": "Sistem proteksi kebakaran (sprinkler) dinilai memadai berdasarkan data yang tersedia. Tertanggung wajib memelihara & menguji fungsi sistem secara berkala sesuai jadwal maintenance.",
+      "kb_query": "pedoman underwriting pemeliharaan sistem proteksi kebakaran"
+    },
+    {
+      "id": "FLOOD_EXPOSURE_01",
+      "category": "Flood Exposure",
+      "always_apply": false,
+      "when": {
+        "field": "natural_perils.flood_risk",
+        "condition": "value_in",
+        "values": ["tinggi", "high"]
+      },
+      "text_template": "Lokasi risiko berada pada zona risiko banjir tinggi. Diberlakukan flood warranty/excess khusus flood sesuai risk appetite, dan/atau pembatasan limit flood extension; disarankan survey ulang aspek drainase & riwayat banjir 5 tahun terakhir.",
+      "kb_query": "risk appetite flood exposure zona risiko banjir tinggi excess warranty"
+    },
+    {
+      "id": "FLOOD_EXPOSURE_02",
+      "category": "Flood Exposure",
+      "always_apply": false,
+      "when": {
+        "field": "natural_perils.flood_risk",
+        "condition": "value_in",
+        "values": ["sedang", "medium"]
+      },
+      "text_template": "Lokasi risiko berada pada zona risiko banjir sedang. Flood extension dapat diberikan dengan tambahan excess sesuai manual risiko dan rekomendasi mitigasi (peninggian barang/stock dari lantai dasar).",
+      "kb_query": "manual risiko banjir sedang excess mitigasi"
+    },
+    {
+      "id": "HOUSEKEEPING_01",
+      "category": "Housekeeping",
+      "always_apply": false,
+      "when": {
+        "field": "electrical_and_maintenance.housekeeping_condition",
+        "condition": "value_in",
+        "values": ["buruk", "poor", "tidak rapi"]
+      },
+      "text_template": "Kondisi housekeeping lokasi risiko dinilai kurang baik (tumpukan barang tidak rapi/akses terhalang). Disyaratkan perbaikan housekeeping (jalur akses evakuasi bebas hambatan, penyimpanan bahan mudah terbakar terpisah) sebelum/selama periode pertanggungan berjalan.",
+      "kb_query": "SOP housekeeping kerapihan gudang syarat akseptasi"
+    },
+    {
+      "id": "HOUSEKEEPING_02",
+      "category": "Housekeeping",
+      "always_apply": false,
+      "when": {
+        "field": "electrical_and_maintenance.housekeeping_condition",
+        "condition": "value_in",
+        "values": ["baik", "good", "sedang"]
+      },
+      "text_template": "Kondisi housekeeping lokasi risiko dinilai dapat diterima. Tertanggung wajib mempertahankan kerapihan penyimpanan barang & jalur akses sesuai kondisi saat survey.",
+      "kb_query": "SOP housekeeping standar penerimaan risiko"
+    },
+    {
+      "id": "LOSS_RECORD_01",
+      "category": "Loss Record",
+      "always_apply": false,
+      "when": {
+        "source": "claim_history",
+        "condition": "has_claims"
+      },
+      "text_template": "Ditemukan riwayat klaim sebelumnya atas nama Tertanggung ini pada database klaim internal. Diperlukan review loss ratio & penyebab klaim oleh underwriter sebelum keputusan akhir; pertimbangkan penyesuaian rate, excess, atau exclusion tambahan atas peril penyebab klaim berulang.",
+      "kb_query": "manual risiko review loss ratio riwayat klaim penyesuaian rate"
+    },
+    {
+      "id": "LOSS_RECORD_02",
+      "category": "Loss Record",
+      "always_apply": false,
+      "when": {
+        "source": "claim_history",
+        "condition": "no_claims"
+      },
+      "text_template": "Tidak ditemukan riwayat klaim sebelumnya atas nama Tertanggung ini pada database klaim internal per tanggal pengecekan. Akseptasi dapat mengikuti rate standar tanpa penyesuaian loss record.",
+      "kb_query": "SOP verifikasi loss record tidak ada klaim sebelumnya"
+    },
+    {
+      "id": "SECURITY_01",
+      "category": "Security/Guarding 24 Jam",
+      "always_apply": false,
+      "when": {
+        "field": "occupancy.occupation_type",
+        "condition": "value_in",
+        "values": ["pergudangan", "distribusi", "pabrik kimia", "logistik", "warehouse", "logistics", "pabrik", "manufaktur", "manufacturing"]
+      },
+      "text_template": "Mengingat jenis okupasi tergolong risiko dengan exposure pencurian/kebakaran signifikan (pergudangan/pabrik/logistik), disyaratkan pengamanan (security/guarding) 24 jam serta CCTV aktif yang berfungsi di seluruh area lokasi risiko selama periode pertanggungan.",
+      "kb_query": "SOP security guarding 24 jam CCTV okupasi pergudangan pabrik"
+    },
+    {
+      "id": "MAINTENANCE_MACHINERY_01",
+      "category": "Maintenance Machinery",
+      "always_apply": false,
+      "when": {
+        "field": "electrical_and_maintenance.maintenance_program",
+        "condition": "value_in",
+        "values": ["tidak", "tidak ada", "no", "none", "not found"]
+      },
+      "text_template": "Program maintenance/perawatan berkala mesin & instalasi kelistrikan belum terkonfirmasi. Disyaratkan Tertanggung menerapkan program preventive maintenance terjadwal (termasuk instalasi kelistrikan) dan menyediakan bukti pemeliharaan berkala kepada Penanggung bila diminta.",
+      "kb_query": "pedoman underwriting maintenance machinery preventive kelistrikan"
+    },
+    {
+      "id": "EXCLUSION_STANDARD_01",
+      "category": "Exclusion MB, BI, Sharia, Silent Risk",
+      "always_apply": true,
+      "when": null,
+      "text_template": "Machinery Breakdown (MB) dikecualikan kecuali dinyatakan lain secara tertulis sebagai perluasan jaminan tersendiri (Machinery Breakdown Extension) dengan tambahan premi & syarat yang disepakati.",
+      "kb_query": "ketentuan produk exclusion machinery breakdown property all risk"
+    },
+    {
+      "id": "EXCLUSION_STANDARD_02",
+      "category": "Exclusion MB, BI, Sharia, Silent Risk",
+      "always_apply": true,
+      "when": null,
+      "text_template": "Business Interruption (BI) dikecualikan dari jaminan Property All Risk dasar kecuali dibeli/diajukan secara terpisah sebagai polis BI/Loss of Profit tersendiri dengan basis Gross Profit/Gross Revenue yang disepakati.",
+      "kb_query": "ketentuan produk exclusion business interruption loss of profit"
+    },
+    {
+      "id": "EXCLUSION_STANDARD_03",
+      "category": "Exclusion MB, BI, Sharia, Silent Risk",
+      "always_apply": true,
+      "when": null,
+      "text_template": "Klausul Silent Risk (Cyber, NCBR - Nuclear Chemical Biological Radiological, dan Terrorism & Sabotage bila tidak dibeli sebagai extension) tetap berlaku dikecualikan secara silent sesuai wording standar & ketentuan produk yang berlaku.",
+      "kb_query": "ketentuan produk silent risk cyber ncbr terrorism sabotage exclusion"
+    },
+    {
+      "id": "EXCLUSION_SHARIA_01",
+      "category": "Exclusion MB, BI, Sharia, Silent Risk",
+      "always_apply": false,
+      "when": {
+        "field": "coverage.coverage_extensions",
+        "condition": "value_in",
+        "values": ["syariah", "sharia"]
+      },
+      "text_template": "Untuk skema Syariah, berlaku prinsip akad Tabarru' (tolong-menolong) & Wakalah bil Ujrah sesuai Peraturan OJK terkait asuransi syariah dan ketentuan produk Syariah internal; underwriting mengikuti Dewan Pengawas Syariah (DPS) bila terdapat ketentuan khusus.",
+      "kb_query": "ketentuan produk asuransi syariah akad tabarru wakalah"
+    },
+    {
+      "id": "STOCK_ADMIN_CLAUSE_01",
+      "category": "Stock Administration Clause",
+      "always_apply": false,
+      "when": {
+        "field": "assets.stock_value",
+        "condition": "not_empty_not_notfound"
+      },
+      "text_template": "Diberlakukan Stock Administration Clause/Declaration mengingat terdapat nilai stok/persediaan yang dipertanggungkan: Tertanggung wajib menyampaikan laporan deklarasi nilai stok bulanan/periodik kepada Penanggung; premi disesuaikan (adjustment premium) berdasarkan nilai rata-rata stok aktual pada akhir periode pertanggungan.",
+      "kb_query": "ketentuan produk stock administration clause declaration persediaan"
+    },
+    {
+      "id": "ACCEPTANCE_VALIDITY_01",
+      "category": "Acceptance Validity",
+      "always_apply": true,
+      "when": null,
+      "text_template": "Persetujuan akseptasi/quotation ini berlaku selama 30 (tiga puluh) hari kalender sejak tanggal disposisi diterbitkan. Apabila melewati masa berlaku tersebut, wajib dilakukan review ulang data risiko & kondisi pasar sebelum penerbitan polis.",
+      "kb_query": "SOP masa berlaku acceptance validity quotation"
+    },
+    {
+      "id": "NO_CLAIM_WARRANTY_01",
+      "category": "No Claim Warranty",
+      "always_apply": false,
+      "when": {
+        "source": "claim_history",
+        "condition": "no_claims"
+      },
+      "text_template": "Diberlakukan No Claim Warranty/Discount: Tertanggung menyatakan tidak ada klaim pada periode pertanggungan sebelumnya sebagai dasar pemberian rate/discount saat ini; apabila di kemudian hari ditemukan pernyataan tidak benar, Penanggung berhak meninjau ulang rate & syarat polis.",
+      "kb_query": "risk appetite no claim warranty discount pernyataan tertanggung"
+    },
+    {
+      "id": "LEADER_TC_01",
+      "category": "Terms & Conditions dari Leader",
+      "always_apply": true,
+      "when": null,
+      "text_template": "Wording, rate, syarat & kondisi (Terms & Conditions), serta klausul-klausul tambahan mengikuti sepenuhnya ketentuan yang ditetapkan oleh Leader pada placement ini. Perubahan T&C hanya dapat dilakukan melalui persetujuan tertulis dari Leader.",
+      "kb_query": "SOP placement mengikuti terms and conditions leader koasuransi"
+    }
+  ]
+}

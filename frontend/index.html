@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Property AI Underwriting Assistant</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-icon">🏢</span>
+    <div>
+      <h1>Property AI Underwriting Assistant</h1>
+      <span class="subtitle">Prototype &middot; Case Management &amp; Document Processing</span>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <span id="ocrBadge" class="badge badge-muted">Mengecek OCR...</span>
+    <button class="btn btn-primary" id="btnGoDashboard">Dashboard</button>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ================= DASHBOARD VIEW ================= -->
+  <section id="view-dashboard" class="view">
+    <div class="view-header">
+      <h2>Daftar Case Underwriting</h2>
+      <button class="btn btn-primary" id="btnNewCase">+ New Case</button>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="Cari nama tertanggung / no. quotation / lokasi..." />
+      <select id="statusFilter">
+        <option value="">Semua Status</option>
+        <option value="Draft">Draft</option>
+        <option value="Processing">Processing</option>
+        <option value="Reviewed">Reviewed</option>
+        <option value="Completed">Completed</option>
+      </select>
+      <button class="btn btn-secondary" id="btnRefreshCases">Refresh</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Case ID</th>
+            <th>No. Quotation/Polis</th>
+            <th>Tertanggung</th>
+            <th>Lokasi Risiko</th>
+            <th>Okupasi</th>
+            <th>Status</th>
+            <th>Dokumen</th>
+            <th>Diperbarui</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="caseTableBody">
+          <tr><td colspan="9" class="empty-row">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= CREATE / EDIT CASE VIEW ================= -->
+  <section id="view-case-form" class="view hidden">
+    <div class="view-header">
+      <h2 id="caseFormTitle">Buat Case Baru</h2>
+      <button class="btn btn-secondary" id="btnCancelForm">&larr; Kembali</button>
+    </div>
+
+    <form id="caseForm" class="card form-grid">
+      <input type="hidden" id="formCaseId" />
+
+      <label>
+        No. Quotation / Polis *
+        <input type="text" id="formQuotationNo" required maxlength="100" />
+      </label>
+
+      <label>
+        Nama Tertanggung *
+        <input type="text" id="formInsuredName" required maxlength="200" />
+      </label>
+
+      <label class="span-2">
+        Lokasi Risiko *
+        <input type="text" id="formRiskLocation" required maxlength="300" />
+      </label>
+
+      <label>
+        Jenis Okupasi / Usaha *
+        <input type="text" id="formOccupation" required maxlength="200" />
+      </label>
+
+      <label>
+        Kantor/Cabang Pengaju
+        <input type="text" id="formBranch" maxlength="150" placeholder="mis. Kantor Cabang Jakarta" />
+      </label>
+
+      <label>
+        Status
+        <select id="formStatus">
+          <option value="Draft">Draft</option>
+          <option value="Processing">Processing</option>
+          <option value="Reviewed">Reviewed</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </label>
+
+      <label>
+        Periode Pertanggungan - Mulai
+        <input type="date" id="formPeriodStart" />
+      </label>
+
+      <label>
+        Periode Pertanggungan - Selesai
+        <input type="date" id="formPeriodEnd" />
+      </label>
+
+      <div class="span-2 form-actions">
+        <span id="formError" class="error-text"></span>
+        <button type="submit" class="btn btn-primary" id="btnSaveCase">Simpan Case</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ================= CASE DETAIL VIEW ================= -->
+  <section id="view-case-detail" class="view hidden">
+    <div class="view-header">
+      <h2>Detail Case <span id="detailCaseId" class="muted"></span></h2>
+      <div class="header-actions">
+        <button class="btn btn-secondary" id="btnBackToDashboard">&larr; Kembali</button>
+        <button class="btn btn-secondary" id="btnEditCase">Edit Case</button>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <!-- Info Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <h3>Informasi Case</h3>
+          <span id="detailStatusBadge" class="badge">-</span>
+        </div>
+        <dl class="def-list" id="caseInfoList"></dl>
+
+        <div class="status-changer">
+          <label for="statusSelect">Ubah Status:</label>
+          <select id="statusSelect">
+            <option value="Draft">Draft</option>
+            <option value="Processing">Processing</option>
+            <option value="Reviewed">Reviewed</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <button class="btn btn-primary btn-sm" id="btnChangeStatus">Update Status</button>
+        </div>
+      </div>
+
+      <!-- Upload Card -->
+      <div class="card">
+        <h3>Upload Dokumen</h3>
+        <p class="hint">Format didukung: PDF, JPG, PNG. Bisa pilih beberapa file sekaligus.</p>
+        <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png" />
+        <button class="btn btn-primary" id="btnUpload">Upload &amp; Proses</button>
+        <div id="uploadStatus" class="upload-status"></div>
+      </div>
+    </div>
+
+    <!-- Document List -->
+    <div class="card">
+      <div class="card-title-row">
+        <h3>Daftar Dokumen</h3>
+        <button class="btn btn-secondary btn-sm" id="btnRefreshDocs">Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama File</th>
+              <th>Jenis Dokumen</th>
+              <th>Format</th>
+              <th>Ukuran</th>
+              <th>Halaman</th>
+              <th>Status Proses</th>
+              <th>Diunggah</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="documentTableBody">
+            <tr><td colspan="8" class="empty-row">Belum ada dokumen.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Structured Data Extraction -->
+    <div class="card" id="extractionCard">
+      <div class="card-title-row">
+        <h3>Structured Data Extraction</h3>
+        <span id="extractionMeta" class="muted"></span>
+      </div>
+      <p class="hint">
+        Gunakan LLM (Ollama, via LLM Extraction Service) untuk membaca teks hasil OCR dokumen dan
+        mengisi form data underwriting secara otomatis. Semua field tetap dapat diperiksa &amp; diedit.
+      </p>
+
+      <div class="extraction-actions">
+        <button class="btn btn-primary" id="btnExtract">Extract Structured Data</button>
+        <button class="btn btn-secondary hidden" id="btnEditExtraction">Edit</button>
+        <button class="btn btn-secondary hidden" id="btnCancelExtractionEdit">Cancel</button>
+        <button class="btn btn-primary hidden" id="btnSaveDraft">Save Draft</button>
+        <button class="btn btn-primary hidden" id="btnSubmitMockRules">Submit for Mock Rules</button>
+        <button class="btn btn-secondary hidden" id="btnReExtract">Re-extract</button>
+      </div>
+
+      <div id="extractionWarnings" class="extraction-warnings hidden"></div>
+      <div id="extractionFormContainer"></div>
+      <div id="mockRulesResult" class="mock-rules-result hidden"></div>
+    </div>
+
+    <!-- ===== FITUR LANJUTAN #1: Search Riwayat Klaim ===== -->
+    <div class="card" id="claimsCard">
+      <div class="card-title-row">
+        <h3>🔍 Search Riwayat Klaim (Database SQLite Dummy)</h3>
+        <button class="btn btn-primary btn-sm" id="btnSearchClaims">Cari Riwayat Klaim PT</button>
+      </div>
+      <p class="hint">
+        Mencari riwayat klaim atas nama Tertanggung pada case ini di database klaim internal
+        (tabel <code>claim_history</code>, data dummy). Murni query database - tidak menggunakan LLM.
+      </p>
+      <div id="claimsResult"><p class="empty">Klik "Cari Riwayat Klaim PT" untuk memulai pencarian.</p></div>
+    </div>
+
+    <!-- ===== FITUR LANJUTAN #2: RAG Knowledge Base ===== -->
+    <div class="card" id="knowledgeCard">
+      <div class="card-title-row">
+        <h3>📚 RAG Knowledge Base</h3>
+        <button class="btn btn-secondary btn-sm" id="btnRefreshKb">Refresh</button>
+      </div>
+      <p class="hint">
+        Upload &amp; indeks pedoman underwriting, SOP, risk appetite, manual risiko, ketentuan produk,
+        dan template disposisi. Dokumen diindeks menjadi vektor embedding (lokal, offline) dan disimpan
+        di SQLite sebagai vector database sederhana; pencarian memakai cosine similarity (retrieval only -
+        LLM tidak membuat aturan tanpa sumber dari sini).
+      </p>
+
+      <form id="kbUploadForm" class="form-grid">
+        <label>Judul Dokumen *
+          <input type="text" id="kbTitle" required maxlength="200" placeholder="mis. SOP Akseptasi Risiko Gudang" />
+        </label>
+        <label>Kategori *
+          <select id="kbCategory" required></select>
+        </label>
+        <label class="span-2">File (PDF / TXT / MD) — opsional bila mengisi teks manual di bawah
+          <input type="file" id="kbFile" accept=".pdf,.txt,.md" />
+        </label>
+        <label class="span-2">Atau tempel teks manual (opsional, untuk uji coba cepat tanpa file)
+          <textarea id="kbTextContent" rows="3" placeholder="Tempel isi pedoman/SOP/ketentuan produk di sini..."></textarea>
+        </label>
+        <div class="span-2 form-actions">
+          <span id="kbUploadError" class="error-text"></span>
+          <button type="submit" class="btn btn-primary">Upload &amp; Indeks</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Judul</th><th>Kategori</th><th>Jumlah Chunk</th><th>Diunggah</th><th>Aksi</th></tr>
+          </thead>
+          <tbody id="kbTableBody"><tr><td colspan="5" class="empty-row">Memuat data...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="kb-search-box">
+        <input type="text" id="kbSearchInput" placeholder="Uji pencarian RAG, mis. 'kelayakan sprinkler fire protection'..." />
+        <select id="kbSearchMode">
+          <option value="search">Retrieval saja</option>
+          <option value="ask">Retrieval + Jawaban Gemini (RAG)</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="btnKbSearch">Cari</button>
+      </div>
+      <p class="hint kb-mode-hint">
+        "Retrieval saja" hanya menampilkan potongan dokumen paling relevan (tanpa LLM).
+        "Retrieval + Jawaban Gemini" menyuntikkan potongan tersebut ke Gemini (context injection)
+        untuk disusun menjadi jawaban naratif - digrounding ketat pada potongan yang ditemukan;
+        jika Gemini belum dikonfigurasi (GEMINI_API_KEY), sistem otomatis memakai mode mock (ekstraktif) sebagai fallback.
+      </p>
+      <div id="kbSearchResult"></div>
+    </div>
+
+    <!-- ===== Disposisi Underwriting (Output Akhir) ===== -->
+    <div class="card" id="dispositionCard">
+      <div class="card-title-row">
+        <h3>📝 Disposisi Underwriting</h3>
+        <span id="dispositionMeta" class="muted"></span>
+      </div>
+      <p class="hint">
+        Disposisi disusun otomatis dari Informasi Risiko, hasil Search Riwayat Klaim, dan
+        Subject To/Conditions Rule Engine (berbasis konfigurasi &amp; data, dilengkapi rujukan
+        Knowledge Base) - teks akhir tetap dapat diedit bebas oleh underwriter sebelum difinalisasi.
+      </p>
+
+      <details class="disposition-overrides">
+        <summary>Input Informasi Placement &amp; Rekomendasi (opsional, isi sebelum Generate)</summary>
+        <div class="form-grid">
+          <label>Type of Cover (TOC)
+            <input type="text" id="dispToc" placeholder="Property All Risk (PAR)" />
+          </label>
+          <label>Rencana Share
+            <input type="text" id="dispSharePlan" placeholder="mis. 40% Leader / 60% Followers" />
+          </label>
+          <label>Leader
+            <input type="text" id="dispLeader" placeholder="Nama perusahaan Leader" />
+          </label>
+          <label>Proposed Participation
+            <input type="text" id="dispParticipation" placeholder="mis. 25%" />
+          </label>
+          <label class="span-2">Keputusan/Rekomendasi Acceptance (kosongkan untuk otomatis dari hasil Mock Rules)
+            <input type="text" id="dispDecision" placeholder="mis. Acceptance with Conditions" />
+          </label>
+          <label class="span-2">Catatan Khusus Underwriter
+            <textarea id="dispNotes" rows="2" placeholder="Catatan tambahan terkait pengajuan ini..."></textarea>
+          </label>
+        </div>
+      </details>
+
+      <div class="extraction-actions">
+        <button class="btn btn-primary" id="btnGenerateDisposition">Generate Disposisi</button>
+        <button class="btn btn-secondary hidden" id="btnGenerateNarrative">✨ Buat Ringkasan Naratif AI (RAG + Gemini)</button>
+        <button class="btn btn-primary hidden" id="btnSaveDisposition">Simpan Perubahan Teks</button>
+      </div>
+
+      <div id="narrativeResult" class="hidden"></div>
+      <div id="dispositionSummary" class="hidden"></div>
+      <textarea id="dispositionTextArea" class="disposition-textarea hidden" rows="28" spellcheck="false"></textarea>
+    </div>
+
+    <!-- ===== FITUR LANJUTAN #4: Analisis Kualitatif & Risiko Bencana Wilayah ===== -->
+    <div class="card" id="qualitativeAnalysisCard">
+      <div class="card-title-row">
+        <h3>🧭 Analisis Kualitatif</h3>
+        <span id="qaMeta" class="muted"></span>
+      </div>
+      <p class="hint">
+        Merangkum seluruh hasil Disposisi Underwriting versi terbaru (Informasi Risiko, Riwayat Klaim,
+        Subject To/Conditions, Rekomendasi, Koordinasi Cabang), digabung dengan Analisis Risiko Bencana
+        Wilayah atas Lokasi Risiko case ini (pemantauan berita publik terkini via Google News RSS - murni
+        web scraping + keyword heuristic, bukan LLM). Jalankan <strong>Generate Disposisi</strong> di atas
+        terlebih dahulu.
+      </p>
+      <div class="extraction-actions">
+        <button class="btn btn-primary" id="btnGenerateQualitativeAnalysis">Buat Analisis Kualitatif</button>
+      </div>
+      <div id="qualitativeAnalysisResult"></div>
+    </div>
+
+    <!-- Case History -->
+    <div class="card">
+      <h3>Histori Case</h3>
+      <ul class="history-list" id="historyList"></ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- ================= EXTRACTION PROGRESS MODAL ================= -->
+<div id="extractionProgressModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Extract Structured Data</h3>
+    </div>
+    <div class="modal-body">
+      <ul class="progress-steps" id="progressSteps">
+        <li data-step="preparing"><span class="step-icon">○</span> Preparing text</li>
+        <li data-step="sending"><span class="step-icon">○</span> Sending to LLM</li>
+        <li data-step="extracting"><span class="step-icon">○</span> Extracting data</li>
+        <li data-step="validating"><span class="step-icon">○</span> Validating result</li>
+        <li data-step="completed"><span class="step-icon">○</span> Completed</li>
+      </ul>
+      <div id="extractionProgressError" class="error-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PREVIEW MODAL ================= -->
+<div id="previewModal" class="modal hidden">
+  <div class="modal-content modal-large">
+    <div class="modal-header">
+      <h3 id="previewModalTitle">Preview Dokumen</h3>
+      <button class="modal-close" data-close="previewModal">&times;</button>
+    </div>
+    <div class="modal-body" id="previewModalBody"></div>
+  </div>
+</div>
+
+<!-- ================= TEXT VIEWER MODAL ================= -->
+<div id="textModal" class="modal hidden">
+  <div class="modal-content modal-large">
+    <div class="modal-header">
+      <h3 id="textModalTitle">Hasil Ekstraksi Teks</h3>
+      <button class="modal-close" data-close="textModal">&times;</button>
+    </div>
+    <div class="modal-body" id="textModalBody"></div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/api.js"></script>
+<script src="js/cases.js"></script>
+<script src="js/documents.js"></script>
+<script src="js/extraction.js"></script>
+<script src="js/advanced.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

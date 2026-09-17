@@ -1,0 +1,97 @@
+{
+  "critical_fields": [
+    "insured.name",
+    "risk_location.address",
+    "building.construction_type",
+    "assets.sum_insured_total",
+    "fire_protection.sprinkler",
+    "coverage.sum_insured"
+  ],
+  "missing_critical_threshold_for_high": 3,
+  "risk_flag_rules": [
+    {
+      "field": "fire_protection.sprinkler",
+      "condition": "value_in",
+      "values": ["tidak", "tidak ada", "no", "none", "not found"],
+      "flag": "Tidak ada sistem sprinkler",
+      "risk_level_impact": "high"
+    },
+    {
+      "field": "fire_protection.hydrant",
+      "condition": "value_in",
+      "values": ["tidak", "tidak ada", "no", "none", "not found"],
+      "flag": "Tidak ada hydrant",
+      "risk_level_impact": "medium"
+    },
+    {
+      "field": "fire_protection.apar_fire_extinguisher",
+      "condition": "value_in",
+      "values": ["tidak", "tidak ada", "no", "none", "not found"],
+      "flag": "Tidak ada APAR / alat pemadam api ringan",
+      "risk_level_impact": "medium"
+    },
+    {
+      "field": "natural_perils.flood_risk",
+      "condition": "value_in",
+      "values": ["tinggi", "high"],
+      "flag": "Risiko banjir tinggi di lokasi",
+      "risk_level_impact": "high"
+    },
+    {
+      "field": "natural_perils.earthquake_risk",
+      "condition": "value_in",
+      "values": ["tinggi", "high"],
+      "flag": "Risiko gempa tinggi di lokasi",
+      "risk_level_impact": "high"
+    },
+    {
+      "field": "natural_perils.windstorm_risk",
+      "condition": "value_in",
+      "values": ["tinggi", "high"],
+      "flag": "Risiko angin ribut/badai tinggi di lokasi",
+      "risk_level_impact": "medium"
+    },
+    {
+      "field": "loss_history.previous_claims",
+      "condition": "not_empty_not_notfound",
+      "flag": "Memiliki riwayat klaim/kerugian sebelumnya",
+      "risk_level_impact": "medium"
+    },
+    {
+      "field": "building.building_condition",
+      "condition": "value_in",
+      "values": ["buruk", "rusak", "poor"],
+      "flag": "Kondisi bangunan buruk",
+      "risk_level_impact": "high"
+    },
+    {
+      "field": "electrical_and_maintenance.electrical_condition",
+      "condition": "value_in",
+      "values": ["buruk", "poor", "tidak terawat"],
+      "flag": "Instalasi kelistrikan tidak layak",
+      "risk_level_impact": "medium"
+    },
+    {
+      "field": "electrical_and_maintenance.housekeeping_condition",
+      "condition": "value_in",
+      "values": ["buruk", "poor", "tidak rapi"],
+      "flag": "Housekeeping lokasi buruk",
+      "risk_level_impact": "low"
+    }
+  ],
+  "consistency_checks": [
+    {
+      "field_a": "assets.sum_insured_total",
+      "field_b": "coverage.sum_insured",
+      "type": "sum_insured_vs_assets",
+      "tolerance_pct": 0.2,
+      "description": "Nilai total aset (assets.sum_insured_total) berbeda signifikan dengan sum insured pada coverage (coverage.sum_insured)"
+    }
+  ],
+  "recommended_actions": {
+    "Low": "Lanjutkan proses underwriting standar.",
+    "Medium": "Perlu review tambahan oleh underwriter sebelum keputusan akhir.",
+    "High": "Wajib review manual oleh senior underwriter; pertimbangkan survey ulang atau syarat tambahan.",
+    "Critical": "Tunda keputusan; wajib eskalasi ke manajemen risiko."
+  }
+}
